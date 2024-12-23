@@ -1,14 +1,21 @@
-import { Repository } from 'typeorm';
-import { Task } from './task.entity';
+import { DataSource, Repository } from 'typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { TaskStatus } from './task-status.enum';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
+import { TaskStatus } from './task-status.enum';
+import { Task } from './task.entity';
 
 export class TasksRepository extends Repository<Task> {
-  async getTasks(filterDto: GetTasksFilterDto): Promise<Task[]> {
+  private repository: Repository<Task>;
+
+  constructor(private dataSource: DataSource) {
+    super();
+    this.repository = this.dataSource.getRepository(Task);
+  }
+
+  public async getTasks(filterDto: GetTasksFilterDto): Promise<Task[]> {
     const { status, search } = filterDto;
 
-    const query = this.createQueryBuilder('task');
+    const query = this.repository.createQueryBuilder('task');
 
     if (status) {
       query.andWhere('task.status = :status', { status });
@@ -27,14 +34,14 @@ export class TasksRepository extends Repository<Task> {
 
   async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
     const { title, description } = createTaskDto;
-    const task: Task = this.create({
+
+    const task = this.create({
       title,
       description,
       status: TaskStatus.OPEN,
     });
 
     await this.save(task);
-
     return task;
   }
 }
