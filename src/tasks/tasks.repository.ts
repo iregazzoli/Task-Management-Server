@@ -1,14 +1,15 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 import { TaskStatus } from './task-status.enum';
 import { Task } from './task.entity';
+import { Injectable } from '@nestjs/common';
 
-export class TasksRepository extends Repository<Task> {
-  private repository: Repository<Task>;
+@Injectable()
+export class TasksRepository {
+  private repository;
 
   constructor(private dataSource: DataSource) {
-    super();
     this.repository = this.dataSource.getRepository(Task);
   }
 
@@ -35,13 +36,25 @@ export class TasksRepository extends Repository<Task> {
   async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
     const { title, description } = createTaskDto;
 
-    const task = this.create({
+    const task = this.repository.create({
       title,
       description,
       status: TaskStatus.OPEN,
     });
 
-    await this.save(task);
+    await this.repository.save(task);
     return task;
+  }
+
+  async findOne(options: any): Promise<Task | null> {
+    return this.repository.findOne(options);
+  }
+
+  async delete(criteria: any): Promise<any> {
+    return this.repository.delete(criteria);
+  }
+
+  async save(task: Task): Promise<Task> {
+    return this.repository.save(task);
   }
 }
